@@ -1,0 +1,61 @@
+# API-PredictHealth GitIgnore
+
+# ===== PYTHON =====
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ===== VIRTUAL ENVIRONMENTS =====
+# Virtual environment folders (current project structure)
+BackendPredictHealth/
+BackendPredictHealth312/
+venv/
+env/
+.venv/
+
+# ===== MACHINE LEARNING MODELS =====
+# Trained model files (keep structure, ignore actual models)
+ml_algorithms/*/saved_models/*.h5
+ml_algorithms/*/saved_models/*.pkl
+ml_algorithms/*/saved_models/*.joblib
+ml_algorithms/cardiovascular_risk/saved_models/
+
+# Training outputs
+ml_algorithms/*/outputs/
+training_logs/
+
+# ===== DATABASE =====
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== CONFIGURATION =====
+# Environment and secret files
+.env
+.env.local
+config/local.py
+config/secrets.py
+
+# ===== LOGS =====
+# Application logs
+*.log
+logs/
+
+# ===== IDE =====
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# ===== SYSTEM =====
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# ===== TEMPORARY =====
+# Temp files
+*.tmp
+.cache/
