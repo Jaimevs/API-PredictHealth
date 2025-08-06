@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "mysql+pymysql://root:9346@localhost/predict_health_db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL")
     
     # API Settings
     API_V1_STR: str = "/api/v1"
