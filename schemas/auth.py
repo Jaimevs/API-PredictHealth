@@ -1,4 +1,3 @@
-# schemas/auth.py
 from pydantic import BaseModel, EmailStr, validator
 from typing import Optional, List
 from datetime import datetime
@@ -37,8 +36,8 @@ class EmailVerification(BaseModel):
         return v
 
 class UserLogin(BaseModel):
-    """Esquema para login de usuario"""
-    username: str  # Puede ser nombre_usuario o correo_electronico
+    """Esquema para login de usuario - Solo con email"""
+    email: EmailStr
     password: str
 
 class Token(BaseModel):

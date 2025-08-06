@@ -1,3 +1,4 @@
+# crud/user.py
 from sqlalchemy.orm import Session
 from models.user import User
 from models.user_role import UserRole
@@ -95,13 +96,10 @@ def deactivate_user(db: Session, user_id: int) -> Optional[User]:
     """Desactiva un usuario"""
     return update_user(db, user_id, {"Estatus": False})
 
-def authenticate_user(db: Session, username: str, password: str, pwd_context) -> Optional[User]:
-    """Autentica un usuario por username/email y contraseña"""
-    # Buscar por nombre de usuario
-    user = get_user_by_username(db, username)
-    if not user:
-        # Si no encuentra por username, buscar por email
-        user = get_user_by_email(db, username)
+def authenticate_user(db: Session, email: str, password: str, pwd_context) -> Optional[User]:
+    """Autentica un usuario por email y contraseña"""
+    # Buscar solo por email
+    user = get_user_by_email(db, email)
     
     if not user:
         return None

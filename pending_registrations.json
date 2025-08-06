@@ -1,16 +1,4 @@
 {
-  "6fb1ecae-7c43-4510-8dc9-4719b1601678": {
-    "user_data": {
-      "correo_electronico": "vazquezjaime183@gmail.com",
-      "nombre_usuario": "JaimeVS",
-      "contrasena_hash": "$2b$12$hZwWsfdOCWp3RGkpGkNdPu22UtFKsuLYIBn3p9aytYCq6l2/pAN/C",
-      "numero_telefonico_movil": "+52123456789",
-      "estatus": true
-    },
-    "verification_code": "917123",
-    "created_at": 1754374637.7135005,
-    "expires_at": 1754461037.7135007
-  },
   "a0a96ede-8922-40b8-91e0-6a7a44758425": {
     "user_data": {
       "correo_electronico": "vazquezjaime183@gmail.com",
