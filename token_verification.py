@@ -1,4 +1,3 @@
-# token_verification.py
 import os
 import json
 import time
@@ -14,7 +13,6 @@ EXPIRATION_TIME = settings.VERIFICATION_TOKEN_EXPIRE_HOURS * 60 * 60
 def store_pending_registration(user_data: dict, verification_code: str):
     """
     Almacena los datos del usuario pendiente de verificación junto con su código
-    Adaptado para tu estructura de BD
     """
     # Generar un token único
     token = str(uuid.uuid4())
@@ -52,7 +50,6 @@ def verify_code(email: str, code: str):
     """
     Verifica si el código proporcionado es válido para el correo electrónico
     Retorna el token si es válido, None si no lo es
-    Adaptado para usar 'correo_electronico' en lugar de 'email'
     """
     if not os.path.exists(PENDING_REGISTRATIONS_FILE):
         return None
@@ -66,10 +63,32 @@ def verify_code(email: str, code: str):
     # Buscar registro por email y código
     for token, data in pending_registrations.items():
         user_data = data.get("user_data", {})
-        if (user_data.get("correo_electronico") == email and  # Cambiado a correo_electronico
+        if (user_data.get("correo_electronico") == email and 
             data.get("verification_code") == code and 
             data.get("expires_at", 0) > time.time()):
-            return token  # Retornamos el token para poder eliminar el registro después
+            return token
+    
+    return None
+
+def verify_code_only(code: str):
+    """
+    Verifica si el código proporcionado es válido (busca en todos los registros pendientes)
+    Retorna el token si es válido, None si no lo es
+    """
+    if not os.path.exists(PENDING_REGISTRATIONS_FILE):
+        return None
+    
+    try:
+        with open(PENDING_REGISTRATIONS_FILE, "r") as f:
+            pending_registrations = json.load(f)
+    except json.JSONDecodeError:
+        return None
+    
+    # Buscar registro solo por código (sin email)
+    for token, data in pending_registrations.items():
+        if (data.get("verification_code") == code and 
+            data.get("expires_at", 0) > time.time()):
+            return token
     
     return None
 

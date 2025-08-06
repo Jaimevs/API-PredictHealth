@@ -1,3 +1,4 @@
+# routes/auth.py
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
@@ -8,7 +9,7 @@ from schemas.auth import (
 )
 from email_service import send_verification_email, generate_verification_code
 from token_verification import (
-    store_pending_registration, verify_code, 
+    store_pending_registration, verify_code_only, 
     get_pending_registration, remove_pending_registration
 )
 from jwt_config import solicita_token
@@ -91,10 +92,10 @@ async def verify_email(
 ):
     """
     Verifica el código de email y crea el usuario en la base de datos
-    Se crea automáticamente la persona asociada
+    Solo necesita el código de verificación
     """
-    # Verificar código
-    token = verify_code(verification_data.correo_electronico, verification_data.verification_code)
+    # Verificar código (busca en todos los registros pendientes)
+    token = verify_code_only(verification_data.verification_code)
     
     if not token:
         raise HTTPException(
@@ -110,7 +111,7 @@ async def verify_email(
             detail="Registro no encontrado o expirado"
         )
     
-    # Crear usuario en la base de datos (automáticamente crea la persona)
+    # Crear usuario en la base de datos (automáticamente crea la persona vacía)
     try:
         db_user = user_crud.create_user(db=db, user_data=user_data)
         
@@ -132,7 +133,7 @@ async def verify_email(
         remove_pending_registration(token)
         
         return VerificationResponse(
-            message="Email verificado exitosamente. Usuario creado con persona vacía.",
+            message="Código verificado exitosamente. Usuario creado con persona vacía.",
             user=db_user,
             token=Token(**token_data)
         )

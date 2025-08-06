@@ -10,5 +10,17 @@
     "verification_code": "917123",
     "created_at": 1754374637.7135005,
     "expires_at": 1754461037.7135007
+  },
+  "a0a96ede-8922-40b8-91e0-6a7a44758425": {
+    "user_data": {
+      "correo_electronico": "vazquezjaime183@gmail.com",
+      "nombre_usuario": "JaimeVS",
+      "contrasena_hash": "$2b$12$AdkG47B6WHZ.inWGTf8IVuslM3eovUVHWd.PScuVWRs5wOuKFseCu",
+      "numero_telefonico_movil": "7761144896",
+      "estatus": true
+    },
+    "verification_code": "284833",
+    "created_at": 1754454694.9175465,
+    "expires_at": 1754541094.9175467
   }
 }

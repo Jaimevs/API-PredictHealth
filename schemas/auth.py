@@ -1,3 +1,4 @@
+# schemas/auth.py
 from pydantic import BaseModel, EmailStr, validator
 from typing import Optional, List
 from datetime import datetime
@@ -24,8 +25,7 @@ class UserRegister(BaseModel):
         return v
 
 class EmailVerification(BaseModel):
-    """Esquema para verificación de email"""
-    correo_electronico: EmailStr
+    """Esquema para verificación de email - Solo código"""
     verification_code: str
     
     @validator('verification_code')

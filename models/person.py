@@ -12,11 +12,13 @@ class Person(Base):
     __tablename__ = "tbb_personas"
     
     ID = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    Nombre = Column(String(80), nullable=False)
-    Primer_Apellido = Column(String(80), nullable=False)
-    Segundo_Apellido = Column(String(80), nullable=True)
-    Fecha_Nacimiento = Column(Date, nullable=False)
-    Genero = Column(Enum(GenderEnum), nullable=False)
+   
+    Nombre = Column(String(80), nullable=True)  
+    Primer_Apellido = Column(String(80), nullable=True)  
+    Segundo_Apellido = Column(String(80), nullable=True)  
+    Fecha_Nacimiento = Column(Date, nullable=True)  
+    Genero = Column(Enum(GenderEnum), nullable=True)  
+    
     Estatus = Column(Boolean, nullable=False, default=True)
     Fecha_Registro = Column(DateTime, nullable=False, default=func.now())
     Fecha_Actualizacion = Column(DateTime, nullable=True, onupdate=func.now())
