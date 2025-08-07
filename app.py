@@ -17,12 +17,13 @@ from routes import (
     heart_measurement,
     physical_activity,
     alert,
-    auth  # Nueva ruta de autenticación
+    auth,  # Autenticacion normal
+    google_auth  # Autenticacion con Google
 )
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="API para monitoreo de salud y predicción de riesgos cardíacos con autenticación JWT",
+    description="API para monitoreo de salud y predicción de riesgos cardíacos con autenticación JWT y Google",
     version="1.0.0",
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
@@ -76,8 +77,8 @@ async def global_exception_handler(request: Request, exc: Exception):
             content={"error": "Error interno del servidor"}
         )
 
-# Incluir rutas con prefijo API v1
-app.include_router(auth.router, prefix=settings.API_V1_STR)  # Rutas de autenticación
+app.include_router(auth.router, prefix=settings.API_V1_STR)  # Autenticacion normal
+app.include_router(google_auth.router, prefix=settings.API_V1_STR)  # Autenticacion Google Auth
 app.include_router(person.router, prefix=settings.API_V1_STR)
 app.include_router(user.router, prefix=settings.API_V1_STR)
 app.include_router(role.router, prefix=settings.API_V1_STR)
@@ -95,7 +96,11 @@ def read_root():
         "version": "1.0.0",
         "environment": settings.ENVIRONMENT,
         "docs": "/docs",
-        "api_v1": settings.API_V1_STR
+        "api_v1": settings.API_V1_STR,
+        "auth_endpoints": {
+            "normal_auth": f"{settings.API_V1_STR}/auth",
+            "google_auth": f"{settings.API_V1_STR}/google-auth"
+        }
     }
 
 @app.get("/health")
@@ -104,7 +109,8 @@ def health_check():
         "status": "healthy", 
         "message": "API funcionando correctamente",
         "environment": settings.ENVIRONMENT,
-        "debug": settings.DEBUG
+        "debug": settings.DEBUG,
+        "available_auth": ["email/password", "google"]
     }
 
 if __name__ == "__main__":

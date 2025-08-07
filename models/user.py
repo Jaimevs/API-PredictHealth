@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, func, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, func, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from config.database import Base
 
@@ -12,6 +12,9 @@ class User(Base):
     Contrasena = Column(String(255), nullable=False)
     Numero_Telefonico_Movil = Column(String(20), nullable=True)
     Estatus = Column(Boolean, nullable=False, default=True)
+
+    Google_ID = Column(String(100), nullable=True, unique=True)
+
     Fecha_Registro = Column(DateTime, nullable=False, default=func.now())
     Fecha_Actualizacion = Column(DateTime, nullable=True, onupdate=func.now())
     

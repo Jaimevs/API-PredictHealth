@@ -151,11 +151,11 @@ async def login(
     db: Session = Depends(get_db)
 ):
     """
-    Autentica un usuario y devuelve un token JWT
+    Autentica un usuario con email y contraseña
     """
     user = user_crud.authenticate_user(
         db, 
-        user_credentials.username, 
+        user_credentials.email,  # Solo email
         user_credentials.password, 
         pwd_context
     )
@@ -163,7 +163,7 @@ async def login(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas",
+            detail="Email o contraseña incorrectos",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
