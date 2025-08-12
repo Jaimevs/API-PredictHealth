@@ -9,6 +9,7 @@ from .user_seeder import UserSeeder
 from .user_role_seeder import UserRoleSeeder
 from .smartwatch_seeder import SmartwatchSeeder
 from .health_profile import HealthProfileSeeder
+from .heart_measurement_seeder import HeartMeasurementSeeder
 from .alerts_seeder import AlertsSeeder
 from .physical_activity_seeder import PhysicalActivitySeeder
 from .base_seeder import BaseSeeder
@@ -53,6 +54,11 @@ class MainSeeder:
                 'tables': ['tbb_perfil_salud']
             },
             {
+                'seeder': HeartMeasurementSeeder,
+                'name': 'Mediciones Cardíacas',
+                'tables': ['tbb_mediciones_cardiacas']
+            },
+            {
                 'seeder': AlertsSeeder,
                 'name': 'Alertas',
                 'tables': ['tbb_alertas']
@@ -77,23 +83,23 @@ class MainSeeder:
             logger.info("🗑️  === INICIANDO LIMPIEZA COMPLETA ===")
             
             with BaseSeeder() as base_seeder:
-                # Agregar la tabla de perfiles de salud a la limpieza
+                # Agregar la tabla de mediciones cardíacas a la limpieza
                 tables_to_clear = [
-                    'tbb_actividad_fisica',   # Actividad física
-                    'tbb_alertas',            # Alertas
+                    'tbb_actividad_fisica',     # Actividad física
+                    'tbb_alertas',              # Alertas
                     'tbb_mediciones_cardiacas', # Mediciones cardíacas
-                    'tbb_perfil_salud',       # Perfiles de salud
-                    'tbb_smartwatches',       # Smartwatches
-                    'tbd_usuarios_roles',     # Relaciones usuario-rol
-                    'tbb_usuarios',           # Usuario principal
-                    'tbb_personas',           # Personas
-                    'tbc_roles',              # Roles base
+                    'tbb_perfil_salud',         # Perfiles de salud
+                    'tbb_smartwatches',         # Smartwatches
+                    'tbd_usuarios_roles',       # Relaciones usuario-rol
+                    'tbb_usuarios',             # Usuario principal
+                    'tbb_personas',             # Personas
+                    'tbc_roles',                # Roles base
                 ]
                 
                 logger.info("Limpiando tablas existentes y reiniciando contadores...")
                 base_seeder.clear_tables(tables_to_clear)
                 
-            logger.info("✅ === LIMPIEZA COMPLETA EXITOSA ===")
+            logger.info("✅=== LIMPIEZA COMPLETA EXITOSA ===")
             logger.info("Todas las tablas existentes han sido limpiadas y los contadores reiniciados a 1")
                 
         except Exception as e:
@@ -128,6 +134,7 @@ class MainSeeder:
             logger.info("- Asignaciones de roles apropiadas")
             logger.info("- Smartwatches asociados a usuarios")
             logger.info("- Perfiles de salud para todos los usuarios")
+            logger.info("- Mediciones cardíacas (30 días de historial)")
             logger.info("- Alertas de salud con diferentes prioridades")
             logger.info("- Datos de actividad física (90 días de historial)")
             
@@ -155,6 +162,11 @@ def main():
         action='store_true',
         help='Solo ejecutar el seeder de perfiles de salud'
     )
+    parser.add_argument(
+        '--heart-only',
+        action='store_true',
+        help='Solo ejecutar el seeder de mediciones cardíacas'
+    )
     
     args = parser.parse_args()
     
@@ -176,6 +188,19 @@ def main():
             sys.exit(1)
         return
     
+    if args.heart_only:
+        # Solo ejecutar el seeder de mediciones cardíacas
+        logger.info("💓 Ejecutando solo el seeder de mediciones cardíacas...")
+        try:
+            with HeartMeasurementSeeder() as seeder:
+                seeder.create_tables()
+                seeder.seed(dias_historial=30)  # 30 días por defecto
+            logger.info("✅ Seeder de mediciones cardíacas completado")
+        except Exception as e:
+            logger.error(f"❌ Error: {str(e)}")
+            sys.exit(1)
+        return
+    
     main_seeder = MainSeeder(clear_data=args.clear)
     
     if args.clear_only:
@@ -183,7 +208,7 @@ def main():
         main_seeder.clear_all_data()
     elif args.clear:
         # Limpiar y luego ejecutar seeders
-        logger.warning("⚠️  MODO DESTRUCTIVO: Los datos existentes serán eliminados")
+        logger.warning("Los datos existentes serán eliminados")
         confirm = input("¿Está seguro que desea continuar? (y/N): ")
         if confirm.lower() != 'y':
             logger.info("Operación cancelada")

@@ -17,46 +17,70 @@ class HeartMeasurementSeeder(BaseSeeder):
     def __init__(self):
         super().__init__()
         
-        # Rangos normales de mediciones por edad y género
-        self.rangos_normales = {
-            'frecuencia_cardiaca': {
-                'joven': (60, 100),     # 18-40 años
-                'adulto': (65, 105),    # 40-65 años
-                'mayor': (70, 110)      # 65+ años
+        # PERFILES MÉDICOS REALISTAS
+        self.perfiles_medicos = {
+            'saludable': {
+                'nombre': 'Persona Saludable',
+                'probabilidad': 0.60,  # 60% de la población
+                'descripcion': 'Valores dentro de rangos normales',
+                'rangos': {
+                    'frecuencia_cardiaca': {
+                        'reposo': (60, 80),      # FC en reposo normal
+                        'activo': (80, 120),     # FC durante actividad
+                        'variacion': 0.1         # ±10% de variación
+                    },
+                    'presion_sistolica': (90, 125),    # Presión normal
+                    'presion_diastolica': (60, 85),    # Presión normal
+                    'saturacion_oxigeno': (97, 100),   # Saturación excelente
+                    'temperatura': (36.2, 37.0),       # Temperatura normal
+                    'nivel_estres': (10, 40),          # Estrés bajo-moderado
+                    'variabilidad_ritmo': (25, 50)     # Buena variabilidad
+                }
             },
-            'presion_sistolica': {
-                'normal': (90, 120),
-                'elevada': (120, 129),
-                'alta': (130, 180)
+            'regular': {
+                'nombre': 'Persona con Problemas Regulares',
+                'probabilidad': 0.30,  # 30% de la población
+                'descripcion': 'Valores alterados pero no críticos',
+                'rangos': {
+                    'frecuencia_cardiaca': {
+                        'reposo': (80, 95),      # FC ligeramente elevada
+                        'activo': (100, 140),    # FC más elevada en actividad
+                        'variacion': 0.15        # ±15% de variación
+                    },
+                    'presion_sistolica': (125, 145),   # Pre-hipertensión/Hipertensión leve
+                    'presion_diastolica': (85, 95),    # Presión diastólica elevada
+                    'saturacion_oxigeno': (94, 97),    # Saturación reducida
+                    'temperatura': (36.0, 37.3),       # Temperatura normal-alta
+                    'nivel_estres': (35, 65),          # Estrés moderado-alto
+                    'variabilidad_ritmo': (15, 30)     # Variabilidad reducida
+                }
             },
-            'presion_diastolica': {
-                'normal': (60, 80),
-                'elevada': (80, 85),
-                'alta': (85, 120)
-            },
-            'saturacion_oxigeno': (95.0, 100.0),
-            'temperatura': (36.0, 37.5),
-            'nivel_estres': (0, 100),
-            'variabilidad_ritmo': (20.0, 50.0)
+            'grave': {
+                'nombre': 'Persona con Problemas Graves',
+                'probabilidad': 0.10,  # 10% de la población
+                'descripcion': 'Valores patológicos que requieren atención médica',
+                'rangos': {
+                    'frecuencia_cardiaca': {
+                        'reposo': (95, 110),     # FC elevada en reposo
+                        'activo': (130, 160),    # FC muy elevada en actividad
+                        'variacion': 0.20        # ±20% de variación
+                    },
+                    'presion_sistolica': (145, 170),   # Hipertensión moderada-severa
+                    'presion_diastolica': (95, 110),   # Presión diastólica alta
+                    'saturacion_oxigeno': (88, 94),    # Saturación baja
+                    'temperatura': (36.0, 38.0),       # Temperatura variable
+                    'nivel_estres': (55, 85),          # Estrés alto
+                    'variabilidad_ritmo': (8, 20)      # Variabilidad muy reducida
+                }
+            }
         }
         
-        # Número de mediciones por smartwatch (por día)
-        self.mediciones_por_dia = {
-            'minimo': 10,    # Usuarios poco activos
-            'promedio': 24,  # Una cada hora
-            'maximo': 48     # Usuarios muy activos
+        # Número de mediciones por día según perfil
+        self.mediciones_por_perfil = {
+            'saludable': (15, 25),    # Mediciones moderadas
+            'regular': (20, 35),      # Más mediciones (monitoreo)
+            'grave': (25, 45)         # Muchas mediciones (seguimiento estricto)
         }
-        
-        # Patrones de medición durante el día
-        self.patrones_horarios = [
-            (6, 0.8),   # 6 AM - menos mediciones (dormido)
-            (8, 1.2),   # 8 AM - más mediciones (despertando)
-            (12, 1.5),  # 12 PM - pico de mediciones (actividad)
-            (15, 1.3),  # 3 PM - actividad moderada
-            (18, 1.4),  # 6 PM - actividad vespertina
-            (22, 1.0),  # 10 PM - mediciones normales
-            (0, 0.6)    # Medianoche - menos mediciones
-        ]
     
     def calcular_edad(self, fecha_nacimiento):
         """Calcular edad actual basada en fecha de nacimiento"""
@@ -67,6 +91,62 @@ class HeartMeasurementSeeder(BaseSeeder):
         return today.year - fecha_nacimiento.year - (
             (today.month, today.day) < (fecha_nacimiento.month, fecha_nacimiento.day)
         )
+    
+    def asignar_perfil_medico(self, edad, condiciones_salud):
+        """Asignar perfil médico basado en edad y condiciones de salud"""
+        # Calcular probabilidades ajustadas por edad y condiciones
+        prob_saludable = 0.60
+        prob_regular = 0.30
+        prob_grave = 0.10
+        
+        # Ajustes por edad
+        if edad < 30:
+            prob_saludable = 0.75
+            prob_regular = 0.20
+            prob_grave = 0.05
+        elif edad > 60:
+            prob_saludable = 0.40
+            prob_regular = 0.45
+            prob_grave = 0.15
+        
+        # Ajustes por condiciones de salud
+        num_condiciones = sum([
+            condiciones_salud.get('fumador', False),
+            condiciones_salud.get('diabetico', False),
+            condiciones_salud.get('hipertenso', False),
+            condiciones_salud.get('historial_cardiaco', False)
+        ])
+        
+        if num_condiciones == 0:
+            # Sin condiciones - más probabilidad de ser saludable
+            prob_saludable = 0.80
+            prob_regular = 0.18
+            prob_grave = 0.02
+        elif num_condiciones >= 2:
+            # Múltiples condiciones - más probabilidad de problemas
+            prob_saludable = 0.20
+            prob_regular = 0.50
+            prob_grave = 0.30
+        elif num_condiciones == 1:
+            # Una condición - perfil intermedio
+            if condiciones_salud.get('historial_cardiaco', False):
+                # Historial cardíaco es más serio
+                prob_saludable = 0.30
+                prob_regular = 0.50
+                prob_grave = 0.20
+            else:
+                prob_saludable = 0.45
+                prob_regular = 0.45
+                prob_grave = 0.10
+        
+        # Seleccionar perfil basado en probabilidades
+        rand = random.random()
+        if rand < prob_saludable:
+            return 'saludable'
+        elif rand < prob_saludable + prob_regular:
+            return 'regular'
+        else:
+            return 'grave'
     
     def obtener_smartwatches_activos(self):
         """Obtener smartwatches activos con información del usuario"""
@@ -83,20 +163,23 @@ class HeartMeasurementSeeder(BaseSeeder):
                 hp.Fumador,
                 hp.Diabetico,
                 hp.Hipertenso,
-                hp.Historial_cardiaco
+                hp.Historial_cardiaco,
+                s.Activo
             FROM tbb_smartwatches s
             INNER JOIN tbb_usuarios u ON s.Usuario_ID = u.ID
             INNER JOIN tbb_personas p ON u.Persona_Id = p.ID
             LEFT JOIN tbb_perfil_salud hp ON u.ID = hp.Usuario_ID
             WHERE s.Estatus = 1 
-            AND s.Activo = 1
             AND u.Estatus = 1 
             AND p.Estatus = 1
+            ORDER BY s.Usuario_ID
         """)
         
         result = self.db.execute(query).fetchall()
-        smartwatches_activos = [
-            {
+        smartwatches_activos = []
+        
+        for row in result:
+            smartwatch_data = {
                 'smartwatch_id': row[0],
                 'usuario_id': row[1],
                 'fecha_vinculacion': row[2],
@@ -105,181 +188,156 @@ class HeartMeasurementSeeder(BaseSeeder):
                 'fumador': row[5] or False,
                 'diabetico': row[6] or False,
                 'hipertenso': row[7] or False,
-                'historial_cardiaco': row[8] or False
+                'historial_cardiaco': row[8] or False,
+                'activo': row[9] or True
             }
-            for row in result
-        ]
+            smartwatches_activos.append(smartwatch_data)
         
         elapsed = time.time() - start_time
         print(f"✅ Consulta completada en {elapsed:.2f} segundos")
-        print(f"📊 Smartwatches activos encontrados: {len(smartwatches_activos):,}")
+        print(f"📊 Smartwatches encontrados: {len(smartwatches_activos):,}")
         
         return smartwatches_activos
     
-    def generar_frecuencia_cardiaca(self, edad, genero, condiciones, hora, nivel_estres):
-        """Generar frecuencia cardíaca realista"""
-        # Determinar rango base por edad
-        if edad < 40:
-            base_min, base_max = self.rangos_normales['frecuencia_cardiaca']['joven']
-        elif edad < 65:
-            base_min, base_max = self.rangos_normales['frecuencia_cardiaca']['adulto']
-        else:
-            base_min, base_max = self.rangos_normales['frecuencia_cardiaca']['mayor']
+    def generar_frecuencia_cardiaca(self, perfil, hora, edad, genero):
+        """Generar frecuencia cardíaca realista según perfil médico"""
+        perfil_data = self.perfiles_medicos[perfil]
+        rangos = perfil_data['rangos']['frecuencia_cardiaca']
         
-        # Ajustes por género (las mujeres tienden a tener FC ligeramente más alta)
+        # Determinar si es momento de reposo o actividad
+        if 22 <= hora or hora <= 6:
+            # Horas de sueño - FC más baja
+            base_min, base_max = rangos['reposo']
+            factor = 0.85  # 15% más baja durante el sueño
+        elif 7 <= hora <= 9 or 17 <= hora <= 20:
+            # Horas de actividad - FC más alta
+            base_min, base_max = rangos['activo']
+            factor = 1.0
+        else:
+            # Horas normales - entre reposo y actividad
+            reposo_min, reposo_max = rangos['reposo']
+            activo_min, activo_max = rangos['activo']
+            base_min = (reposo_min + activo_min) // 2
+            base_max = (reposo_max + activo_max) // 2
+            factor = 1.0
+        
+        # Ajustes por género (mujeres tienden a tener FC ligeramente más alta)
         if genero == GenderEnum.M:
+            base_min += 3
+            base_max += 3
+        
+        # Ajustes por edad
+        if edad > 65:
             base_min += 5
             base_max += 5
+        elif edad < 30:
+            base_min -= 3
+            base_max -= 3
         
-        # Ajustes por condiciones de salud
-        if condiciones['fumador']:
-            base_min += 10
-            base_max += 15
-        if condiciones['diabetico']:
-            base_min += 5
-            base_max += 10
-        if condiciones['hipertenso']:
-            base_min += 8
-            base_max += 12
-        if condiciones['historial_cardiaco']:
-            base_min += 15
-            base_max += 20
+        # Calcular FC final
+        fc_min = int(base_min * factor)
+        fc_max = int(base_max * factor)
         
-        # Ajustes por hora del día
-        if 6 <= hora <= 9:
-            factor = 1.1  # Mañana - ligeramente elevada
-        elif 10 <= hora <= 17:
-            factor = 1.0  # Día - normal
-        elif 18 <= hora <= 22:
-            factor = 0.95  # Tarde - ligeramente baja
-        else:
-            factor = 0.8   # Noche - baja (reposo)
+        # Aplicar variación del perfil
+        variacion = rangos['variacion']
+        fc_base = random.randint(fc_min, fc_max)
+        variacion_valor = fc_base * variacion * random.uniform(-1, 1)
+        fc_final = int(fc_base + variacion_valor)
         
-        # Ajuste por nivel de estrés
-        stress_factor = 1 + (nivel_estres / 200)  # Max +50% por estrés máximo
-        
-        # Calcular rango final
-        fc_min = int((base_min * factor * stress_factor))
-        fc_max = int((base_max * factor * stress_factor))
-        
-        # Asegurar límites razonables
-        fc_min = max(fc_min, 40)
-        fc_max = min(fc_max, 200)
-        
-        return random.randint(fc_min, fc_max)
+        # Límites de seguridad
+        return max(45, min(fc_final, 180))
     
-    def generar_presion_arterial(self, edad, condiciones):
-        """Generar presión arterial sistólica y diastólica"""
-        # Determinar si es hipertenso o tiene factores de riesgo
-        es_hipertenso = condiciones['hipertenso']
-        factores_riesgo = sum([
-            condiciones['diabetico'],
-            condiciones['fumador'],
-            condiciones['historial_cardiaco'],
-            edad > 50
-        ])
+    def generar_presion_arterial(self, perfil, edad):
+        """Generar presión arterial según perfil médico"""
+        perfil_data = self.perfiles_medicos[perfil]
         
-        if es_hipertenso or factores_riesgo >= 2:
-            # Presión alta
-            sistolica_min, sistolica_max = self.rangos_normales['presion_sistolica']['alta']
-            diastolica_min, diastolica_max = self.rangos_normales['presion_diastolica']['alta']
-        elif factores_riesgo == 1 or edad > 40:
-            # Presión elevada
-            sistolica_min, sistolica_max = self.rangos_normales['presion_sistolica']['elevada']
-            diastolica_min, diastolica_max = self.rangos_normales['presion_diastolica']['elevada']
-        else:
-            # Presión normal
-            sistolica_min, sistolica_max = self.rangos_normales['presion_sistolica']['normal']
-            diastolica_min, diastolica_max = self.rangos_normales['presion_diastolica']['normal']
+        # Presión sistólica
+        sys_min, sys_max = perfil_data['rangos']['presion_sistolica']
+        sistolica = random.randint(sys_min, sys_max)
         
-        sistolica = random.randint(sistolica_min, sistolica_max)
-        diastolica = random.randint(diastolica_min, diastolica_max)
+        # Presión diastólica
+        dia_min, dia_max = perfil_data['rangos']['presion_diastolica']
+        diastolica = random.randint(dia_min, dia_max)
         
-        # Asegurar que la diastólica no sea mayor que la sistólica
+        # Asegurar relación lógica entre sistólica y diastólica
         if diastolica >= sistolica:
-            diastolica = sistolica - random.randint(20, 40)
-            diastolica = max(diastolica, 50)  # Mínimo absoluto
+            diastolica = sistolica - random.randint(30, 50)
         
-        return sistolica, diastolica
-    
-    def generar_saturacion_oxigeno(self, condiciones, edad):
-        """Generar saturación de oxígeno"""
-        min_sat, max_sat = self.rangos_normales['saturacion_oxigeno']
-        
-        # Ajustes por condiciones
-        if condiciones['fumador']:
-            min_sat -= 3
-            max_sat -= 1
-        if condiciones['historial_cardiaco']:
-            min_sat -= 2
-            max_sat -= 1
-        if edad > 70:
-            min_sat -= 1
-        
-        # Asegurar límites
-        min_sat = max(min_sat, 85.0)
-        max_sat = min(max_sat, 100.0)
-        
-        return round(random.uniform(min_sat, max_sat), 1)
-    
-    def generar_temperatura(self):
-        """Generar temperatura corporal"""
-        min_temp, max_temp = self.rangos_normales['temperatura']
-        return round(random.uniform(min_temp, max_temp), 1)
-    
-    def generar_nivel_estres(self, hora, condiciones):
-        """Generar nivel de estrés (0-100)"""
-        # Base por hora del día
-        if 6 <= hora <= 9:
-            base = random.randint(20, 40)  # Mañana - estrés moderado
-        elif 10 <= hora <= 17:
-            base = random.randint(30, 60)  # Trabajo - más estrés
-        elif 18 <= hora <= 22:
-            base = random.randint(15, 35)  # Tarde - relajándose
-        else:
-            base = random.randint(5, 20)   # Noche - muy bajo
-        
-        # Ajustes por condiciones
-        if condiciones['fumador']:
-            base += random.randint(10, 20)
-        if condiciones['hipertenso']:
-            base += random.randint(5, 15)
-        if condiciones['diabetico']:
-            base += random.randint(5, 10)
-        
-        return min(base, 100)
-    
-    def generar_variabilidad_ritmo(self, edad, condiciones):
-        """Generar variabilidad del ritmo cardíaco"""
-        min_var, max_var = self.rangos_normales['variabilidad_ritmo']
-        
-        # La variabilidad disminuye con la edad
+        # Ajustes por edad
         if edad > 60:
-            min_var -= 10
-            max_var -= 10
+            sistolica += random.randint(5, 15)
+            diastolica += random.randint(3, 8)
+        
+        return max(80, sistolica), max(50, diastolica)
+    
+    def generar_saturacion_oxigeno(self, perfil, hora):
+        """Generar saturación de oxígeno según perfil médico"""
+        perfil_data = self.perfiles_medicos[perfil]
+        sat_min, sat_max = perfil_data['rangos']['saturacion_oxigeno']
+        
+        saturacion_base = random.uniform(sat_min, sat_max)
+        
+        # Variación por hora (ligeramente más baja durante el sueño)
+        if 22 <= hora or hora <= 6:
+            saturacion_base -= random.uniform(0.5, 1.5)
+        
+        return round(max(85.0, min(saturacion_base, 100.0)), 1)
+    
+    def generar_temperatura(self, perfil, hora):
+        """Generar temperatura corporal según perfil médico"""
+        perfil_data = self.perfiles_medicos[perfil]
+        temp_min, temp_max = perfil_data['rangos']['temperatura']
+        
+        temperatura_base = random.uniform(temp_min, temp_max)
+        
+        # Variación circadiana natural
+        if 4 <= hora <= 6:
+            temperatura_base -= 0.3  # Más baja en madrugada
+        elif 14 <= hora <= 18:
+            temperatura_base += 0.2  # Más alta en tarde
+        
+        return round(temperatura_base, 1)
+    
+    def generar_nivel_estres(self, perfil, hora):
+        """Generar nivel de estrés según perfil médico"""
+        perfil_data = self.perfiles_medicos[perfil]
+        estres_min, estres_max = perfil_data['rangos']['nivel_estres']
+        
+        # Base según perfil
+        estres_base = random.randint(estres_min, estres_max)
+        
+        # Variación por hora del día
+        if 8 <= hora <= 11 or 13 <= hora <= 17:
+            # Horas laborales - más estrés
+            estres_base += random.randint(10, 20)
+        elif 22 <= hora or hora <= 6:
+            # Horas de descanso - menos estrés
+            estres_base -= random.randint(10, 25)
+        
+        return max(0, min(estres_base, 100))
+    
+    def generar_variabilidad_ritmo(self, perfil, edad):
+        """Generar variabilidad del ritmo cardíaco según perfil médico"""
+        perfil_data = self.perfiles_medicos[perfil]
+        var_min, var_max = perfil_data['rangos']['variabilidad_ritmo']
+        
+        variabilidad_base = random.uniform(var_min, var_max)
+        
+        # Ajuste por edad (disminuye con la edad)
+        if edad > 60:
+            variabilidad_base *= 0.8
         elif edad > 40:
-            min_var -= 5
-            max_var -= 5
+            variabilidad_base *= 0.9
+        elif edad < 30:
+            variabilidad_base *= 1.1
         
-        # Condiciones que afectan la variabilidad
-        if condiciones['historial_cardiaco']:
-            min_var -= 8
-            max_var -= 8
-        if condiciones['diabetico']:
-            min_var -= 5
-            max_var -= 5
-        
-        # Asegurar límites
-        min_var = max(min_var, 5.0)
-        max_var = max(max_var, min_var + 5)
-        
-        return round(random.uniform(min_var, max_var), 2)
+        return round(max(5.0, variabilidad_base), 2)
     
     def generar_mediciones_para_smartwatch(self, smartwatch_data, dias_historial=30):
-        """Generar mediciones para un smartwatch específico"""
+        """Generar mediciones para un smartwatch específico con perfil médico"""
         mediciones = []
         
-        # Calcular edad y preparar condiciones
+        # Calcular edad y condiciones de salud
         edad = self.calcular_edad(smartwatch_data['fecha_nacimiento'])
         condiciones = {
             'fumador': smartwatch_data['fumador'],
@@ -288,13 +346,19 @@ class HeartMeasurementSeeder(BaseSeeder):
             'historial_cardiaco': smartwatch_data['historial_cardiaco']
         }
         
-        # Determinar cuántas mediciones por día (basado en perfil del usuario)
-        if edad < 30:
-            mediciones_diarias = random.randint(20, 48)  # Jóvenes más activos
-        elif edad < 50:
-            mediciones_diarias = random.randint(15, 30)  # Adultos moderados
-        else:
-            mediciones_diarias = random.randint(10, 20)  # Mayores menos activos
+        # Asignar perfil médico
+        perfil_medico = self.asignar_perfil_medico(edad, condiciones)
+        
+        # Determinar mediciones por día según perfil
+        mediciones_min, mediciones_max = self.mediciones_por_perfil[perfil_medico]
+        
+        # Ajustar por estado del smartwatch
+        if not smartwatch_data['activo']:
+            mediciones_min = int(mediciones_min * 0.4)
+            mediciones_max = int(mediciones_max * 0.4)
+        
+        print(f"👤 Usuario {smartwatch_data['usuario_id']}: {self.perfiles_medicos[perfil_medico]['nombre']} "
+              f"(Edad: {edad}, Mediciones: {mediciones_min}-{mediciones_max}/día)")
         
         # Generar mediciones para cada día
         fecha_inicio = max(
@@ -305,14 +369,12 @@ class HeartMeasurementSeeder(BaseSeeder):
         for dia in range((datetime.now().date() - fecha_inicio).days + 1):
             fecha_dia = fecha_inicio + timedelta(days=dia)
             
-            # Evitar fechas futuras
             if fecha_dia > datetime.now().date():
                 break
             
-            # Número de mediciones para este día (con algo de variación)
-            num_mediciones = max(1, mediciones_diarias + random.randint(-5, 5))
+            # Número de mediciones para este día
+            num_mediciones = random.randint(mediciones_min, mediciones_max)
             
-            # Generar mediciones distribuidas a lo largo del día
             for _ in range(num_mediciones):
                 # Hora aleatoria del día
                 hora = random.randint(0, 23)
@@ -323,28 +385,27 @@ class HeartMeasurementSeeder(BaseSeeder):
                     hour=hora, minute=minuto, second=segundo
                 ))
                 
-                # Generar nivel de estrés primero (afecta otras mediciones)
-                nivel_estres = self.generar_nivel_estres(hora, condiciones)
-                
-                # Generar todas las mediciones
+                # Generar todas las mediciones según el perfil médico
                 frecuencia_cardiaca = self.generar_frecuencia_cardiaca(
-                    edad, smartwatch_data['genero'], condiciones, hora, nivel_estres
+                    perfil_medico, hora, edad, smartwatch_data['genero']
                 )
                 
-                # No todas las mediciones incluyen presión arterial (solo algunos smartwatches)
-                if random.random() < 0.7:  # 70% incluyen presión
-                    presion_sistolica, presion_diastolica = self.generar_presion_arterial(edad, condiciones)
+                nivel_estres = self.generar_nivel_estres(perfil_medico, hora)
+                
+                # Presión arterial (85% de las mediciones)
+                if random.random() < 0.85:
+                    presion_sistolica, presion_diastolica = self.generar_presion_arterial(perfil_medico, edad)
                 else:
                     presion_sistolica = presion_diastolica = None
                 
-                # Saturación de oxígeno (80% de las mediciones)
-                saturacion_oxigeno = self.generar_saturacion_oxigeno(condiciones, edad) if random.random() < 0.8 else None
+                # Saturación de oxígeno (90% de las mediciones)
+                saturacion_oxigeno = self.generar_saturacion_oxigeno(perfil_medico, hora) if random.random() < 0.90 else None
                 
-                # Temperatura (60% de las mediciones)
-                temperatura = self.generar_temperatura() if random.random() < 0.6 else None
+                # Temperatura (75% de las mediciones)
+                temperatura = self.generar_temperatura(perfil_medico, hora) if random.random() < 0.75 else None
                 
-                # Variabilidad del ritmo (90% de las mediciones)
-                variabilidad_ritmo = self.generar_variabilidad_ritmo(edad, condiciones) if random.random() < 0.9 else None
+                # Variabilidad del ritmo (95% de las mediciones)
+                variabilidad_ritmo = self.generar_variabilidad_ritmo(perfil_medico, edad) if random.random() < 0.95 else None
                 
                 medicion = {
                     'Usuario_ID': smartwatch_data['usuario_id'],
@@ -363,41 +424,51 @@ class HeartMeasurementSeeder(BaseSeeder):
                 
                 mediciones.append(medicion)
         
-        return mediciones
+        return mediciones, perfil_medico
     
     def generar_mediciones_batch(self, smartwatches_activos, dias_historial=30):
         """Generar mediciones cardíacas para todos los smartwatches"""
         print(f"🔧 Generando mediciones cardíacas para {len(smartwatches_activos):,} smartwatches...")
         print(f"📅 Historial: {dias_historial} días")
-        start_time = time.time()
+        print(f"🏥 Distribuyendo perfiles médicos realistas...\n")
         
+        start_time = time.time()
         todas_mediciones = []
         total_mediciones = 0
+        perfiles_asignados = {'saludable': 0, 'regular': 0, 'grave': 0}
         
         for i, smartwatch_data in enumerate(smartwatches_activos):
-            mediciones_smartwatch = self.generar_mediciones_para_smartwatch(
+            mediciones_smartwatch, perfil = self.generar_mediciones_para_smartwatch(
                 smartwatch_data, dias_historial
             )
             
             todas_mediciones.extend(mediciones_smartwatch)
             total_mediciones += len(mediciones_smartwatch)
+            perfiles_asignados[perfil] += 1
             
-            # Mostrar progreso cada 100 smartwatches
-            if (i + 1) % 100 == 0:
+            # Mostrar progreso
+            if (i + 1) % 5 == 0 or len(smartwatches_activos) <= 10:
                 elapsed = time.time() - start_time
                 rate = (i + 1) / elapsed
                 promedio_mediciones = total_mediciones / (i + 1)
                 
-                print(f"📈 Procesados: {i + 1:,}/{len(smartwatches_activos):,} smartwatches "
-                      f"- {total_mediciones:,} mediciones ({promedio_mediciones:.1f} prom/smartwatch) "
-                      f"- {rate:.1f} smartwatches/seg")
+                print(f"📈 Procesados: {i + 1:,}/{len(smartwatches_activos):,} usuarios "
+                      f"- {total_mediciones:,} mediciones ({promedio_mediciones:.0f} prom/usuario)")
         
         elapsed = time.time() - start_time
         promedio_final = total_mediciones / len(smartwatches_activos) if smartwatches_activos else 0
         
-        print(f"✅ Generación completada en {elapsed:.2f} segundos")
+        print(f"\n✅ Generación completada en {elapsed:.2f} segundos")
         print(f"📊 Total de mediciones generadas: {total_mediciones:,}")
-        print(f"📊 Promedio por smartwatch: {promedio_final:.1f} mediciones")
+        print(f"📊 Promedio por usuario: {promedio_final:.0f} mediciones")
+        
+        # Mostrar distribución de perfiles
+        print(f"\n🏥 Distribución de perfiles médicos:")
+        total_usuarios = sum(perfiles_asignados.values())
+        for perfil, cantidad in perfiles_asignados.items():
+            porcentaje = (cantidad / total_usuarios) * 100
+            nombre = self.perfiles_medicos[perfil]['nombre']
+            print(f"   • {nombre}: {cantidad} usuarios ({porcentaje:.1f}%)")
         
         return todas_mediciones
     
@@ -471,7 +542,7 @@ class HeartMeasurementSeeder(BaseSeeder):
         frecuencias = [m['Frecuencia_cardiaca'] for m in mediciones_data]
         niveles_estres = [m['Nivel_estres'] for m in mediciones_data]
         
-        print(f"\n📈 Rangos de valores:")
+        print(f"\n📈 Rangos de valores generados:")
         print(f"   • Frecuencia cardíaca: {min(frecuencias)}-{max(frecuencias)} bpm")
         print(f"   • Nivel de estrés: {min(niveles_estres)}-{max(niveles_estres)}%")
         
@@ -480,55 +551,102 @@ class HeartMeasurementSeeder(BaseSeeder):
             presiones_dia = [m['Presion_diastolica'] for m in mediciones_data if m['Presion_diastolica']]
             print(f"   • Presión sistólica: {min(presiones_sys)}-{max(presiones_sys)} mmHg")
             print(f"   • Presión diastólica: {min(presiones_dia)}-{max(presiones_dia)} mmHg")
+        
+        if con_saturacion > 0:
+            saturaciones = [float(m['Saturacion_oxigeno']) for m in mediciones_data if m['Saturacion_oxigeno']]
+            print(f"   • Saturación O2: {min(saturaciones):.1f}-{max(saturaciones):.1f}%")
+        
+        # Mostrar usuarios procesados
+        usuarios_procesados = sorted(set(m['Usuario_ID'] for m in mediciones_data))
+        print(f"\n👥 Usuarios con mediciones: {usuarios_procesados}")
+    
+    def create_tables(self):
+        """Crear las tablas necesarias si no existen"""
+        try:
+            from config.database import engine
+            HeartMeasurement.__table__.create(engine, checkfirst=True)
+            logger.info("✅ Tabla de mediciones cardíacas verificada/creada")
+        except Exception as e:
+            logger.warning(f"⚠️ Error al crear tabla de mediciones cardíacas: {e}")
     
     def seed(self, dias_historial=30):
-        """Seed para mediciones cardíacas basado en smartwatches activos"""
-        logger.info("Iniciando seeding de mediciones cardíacas...")
-        print(f"\n💓 Iniciando creación de mediciones cardíacas...")
+        """Seed para mediciones cardíacas con perfiles médicos realistas"""
+        logger.info("Iniciando seeding de mediciones cardíacas con perfiles realistas...")
+        print(f"\n💓 Iniciando creación de mediciones cardíacas con perfiles médicos realistas...")
         
         start_total = time.time()
         
-        # 1. Obtener smartwatches activos
+        # 1. Obtener smartwatches
         smartwatches_activos = self.obtener_smartwatches_activos()
         
         if not smartwatches_activos:
-            print("✅ No hay smartwatches activos. No hay mediciones que generar.")
+            print("❌ No hay smartwatches disponibles. Verifique que:")
+            print("   • Los usuarios tengan smartwatches asignados")
+            print("   • Ejecute primero SmartwatchSeeder si es necesario")
             return
         
-        # 2. Generar mediciones en memoria
+        # 2. Mostrar información de perfiles médicos
+        print(f"\n🏥 PERFILES MÉDICOS DISPONIBLES:")
+        for perfil_key, perfil_data in self.perfiles_medicos.items():
+            print(f"   • {perfil_data['nombre']}: {perfil_data['descripcion']} ({perfil_data['probabilidad']*100:.0f}%)")
+        
+        # 3. Generar mediciones en memoria
         mediciones_data = self.generar_mediciones_batch(smartwatches_activos, dias_historial)
         
-        # 3. Mostrar estadísticas antes de insertar
+        # 4. Mostrar estadísticas antes de insertar
         self.mostrar_estadisticas(mediciones_data)
         
-        # 4. Insertar usando bulk operations
+        # 5. Insertar usando bulk operations
         mediciones_creadas = self.insertar_mediciones_bulk(mediciones_data)
         
-        # 5. Resumen final
+        # 6. Resumen final
         total_elapsed = time.time() - start_total
         total_rate = mediciones_creadas / total_elapsed if total_elapsed > 0 else 0
+        
+        usuarios_procesados = sorted(set(sw['usuario_id'] for sw in smartwatches_activos))
         
         print(f"\n🎉 ¡Seeding de mediciones cardíacas completado!")
         print(f"⏱️  Tiempo total: {total_elapsed:.2f} segundos")
         print(f"🚄 Velocidad promedio: {total_rate:.0f} mediciones/segundo")
         print(f"\n📊 Resumen final:")
         print(f"   • Mediciones creadas: {mediciones_creadas:,}")
+        print(f"   • Usuarios procesados: {usuarios_procesados}")
         print(f"   • Smartwatches procesados: {len(smartwatches_activos):,}")
+        print(f"   • Período de datos: {dias_historial} días")
+        print(f"   • Perfiles médicos: 3 tipos (saludable, regular, grave)")
+        
         if len(smartwatches_activos) > 0:
             promedio_por_smartwatch = mediciones_creadas / len(smartwatches_activos)
-            print(f"   • Promedio por smartwatch: {promedio_por_smartwatch:.1f} mediciones")
-        print(f"   • Período de datos: {dias_historial} días")
+            print(f"   • Promedio por usuario: {promedio_por_smartwatch:.1f} mediciones")
         
         logger.info(f"Seeding de mediciones cardíacas completado:")
+        logger.info(f"- Usuarios procesados: {usuarios_procesados}")
         logger.info(f"- Tiempo total: {total_elapsed:.2f}s")
         logger.info(f"- Mediciones creadas: {mediciones_creadas}")
         logger.info(f"- Velocidad: {total_rate:.0f} mediciones/seg")
+    
+    def run(self, clear_first=False, table_names=None):
+        """Ejecutar el seeder de mediciones cardíacas"""
+        try:
+            if clear_first and table_names:
+                logger.info("🗑️ Limpiando datos existentes de mediciones cardíacas...")
+                self.clear_tables(table_names)
+            
+            logger.info("💓 Ejecutando seeder de mediciones cardíacas...")
+            
+            # Ejecutar el seed con parámetros por defecto
+            self.seed(dias_historial=30)
+                
+        except Exception as e:
+            logger.error(f"❌ Error durante el seeding de mediciones cardíacas: {str(e)}")
+            self.db.rollback()
+            raise e
 
 if __name__ == "__main__":
     try:
         with HeartMeasurementSeeder() as seeder:
             seeder.create_tables()
-            # Generar 30 días de historial por defecto
+            # Generar 30 días de historial con perfiles médicos realistas
             seeder.seed(dias_historial=30)
     except KeyboardInterrupt:
         print("\n❌ Proceso interrumpido por el usuario")
