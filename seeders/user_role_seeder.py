@@ -4,10 +4,12 @@ from models.user import User
 from models.role import Role
 import logging
 import random
+from sqlalchemy import text
+import time
 
 logger = logging.getLogger(__name__)
 
-class UserRoleSeeder(BaseSeeder):
+class UltraOptimizedUserRoleSeeder(BaseSeeder):
     def __init__(self):
         super().__init__()
         
@@ -15,11 +17,13 @@ class UserRoleSeeder(BaseSeeder):
         self.config_roles = {
             'ADMIN': {
                 'cantidad': 2,
-                'descripcion': 'Administradores del sistema'
+                'descripcion': 'Administradores del sistema',
+                'prioridad_nombres': ['admin', 'administrator', 'root', 'super']
             },
             'MEDICO': {
                 'cantidad': 2,
-                'descripcion': 'Médicos/Doctores'
+                'descripcion': 'Médicos/Doctores',
+                'prioridad_nombres': ['dr', 'doctor', 'medico', 'dra']
             },
             'USUARIO': {
                 'descripcion': 'Usuarios regulares (resto de usuarios)'
@@ -61,7 +65,8 @@ class UserRoleSeeder(BaseSeeder):
                 if cantidad_admin >= 1:
                     nueva_config['ADMIN'] = {
                         'cantidad': cantidad_admin,
-                        'descripcion': 'Administradores del sistema'
+                        'descripcion': 'Administradores del sistema',
+                        'prioridad_nombres': ['admin', 'administrator', 'root', 'super']
                     }
                     break
                 else:
@@ -77,7 +82,8 @@ class UserRoleSeeder(BaseSeeder):
                 if cantidad_medico >= 1:
                     nueva_config['MEDICO'] = {
                         'cantidad': cantidad_medico,
-                        'descripcion': 'Médicos/Doctores'
+                        'descripcion': 'Médicos/Doctores',
+                        'prioridad_nombres': ['dr', 'doctor', 'medico', 'dra']
                     }
                     break
                 else:
@@ -92,196 +98,328 @@ class UserRoleSeeder(BaseSeeder):
         
         return nueva_config
     
-    def validar_roles_disponibles(self, roles_db):
-        """Validar que existan los roles necesarios en la base de datos"""
-        roles_existentes = {role.Nombre for role in roles_db}
-        roles_necesarios = set(self.config_roles.keys())
+    def seed_ultra_optimized(self):
+        """Ultra optimización usando SQL directo"""
+        logger.info("Iniciando seeding ULTRA OPTIMIZADO de roles...")
+        print(f"\n🚀 Iniciando asignación ULTRA OPTIMIZADA de roles...")
         
-        roles_faltantes = roles_necesarios - roles_existentes
+        start_time = time.time()
         
-        if roles_faltantes:
-            error_msg = f"❌ Faltan los siguientes roles en la base de datos: {', '.join(roles_faltantes)}"
-            logger.error(error_msg)
-            print(error_msg)
-            print("💡 Ejecute primero RoleSeeder para crear los roles necesarios")
-            return False
+        # 1. VALIDACIONES RÁPIDAS CON QUERIES OPTIMIZADAS
+        print("🔍 Validando datos...")
         
-        return True
-    
-    def seleccionar_usuarios_para_rol(self, usuarios_disponibles, cantidad, rol_nombre):
-        """Seleccionar usuarios para un rol específico"""
-        if cantidad >= len(usuarios_disponibles):
-            return usuarios_disponibles.copy()
+        # Contar usuarios y roles de una vez
+        validation_query = """
+        SELECT 
+            (SELECT COUNT(*) FROM tbb_usuarios WHERE Estatus = true) as total_usuarios,
+            (SELECT COUNT(*) FROM tbc_roles) as total_roles,
+            (SELECT COUNT(*) FROM tbc_roles WHERE Nombre IN ('ADMIN', 'MEDICO', 'USUARIO')) as roles_necesarios
+        """
         
-        # Para ADMIN, preferir usuarios con nombres que sugieran administración
-        if rol_nombre == 'ADMIN':
-            usuarios_admin = []
-            nombres_admin = ['admin', 'administrator', 'root', 'super']
-            
-            for usuario in usuarios_disponibles:
-                for nombre_admin in nombres_admin:
-                    if nombre_admin in usuario.Nombre_Usuario.lower() or nombre_admin in usuario.Correo_Electronico.lower():
-                        usuarios_admin.append(usuario)
-                        break
-            
-            # Si encontramos usuarios "admin", usarlos primero
-            if usuarios_admin:
-                seleccionados = usuarios_admin[:cantidad]
-                # Si necesitamos más, completar aleatoriamente
-                if len(seleccionados) < cantidad:
-                    restantes = [u for u in usuarios_disponibles if u not in seleccionados]
-                    seleccionados.extend(random.sample(restantes, cantidad - len(seleccionados)))
-                return seleccionados
+        result = self.db.execute(text(validation_query))
+        stats = result.fetchone()
         
-        # Para MEDICO, preferir usuarios con nombres que sugieran medicina
-        elif rol_nombre == 'MEDICO':
-            usuarios_medico = []
-            nombres_medico = ['dr', 'doctor', 'medico', 'dra']
-            
-            for usuario in usuarios_disponibles:
-                for nombre_medico in nombres_medico:
-                    if nombre_medico in usuario.Nombre_Usuario.lower() or nombre_medico in usuario.Correo_Electronico.lower():
-                        usuarios_medico.append(usuario)
-                        break
-            
-            # Si encontramos usuarios "doctor", usarlos primero
-            if usuarios_medico:
-                seleccionados = usuarios_medico[:cantidad]
-                # Si necesitamos más, completar aleatoriamente
-                if len(seleccionados) < cantidad:
-                    restantes = [u for u in usuarios_disponibles if u not in seleccionados]
-                    seleccionados.extend(random.sample(restantes, cantidad - len(seleccionados)))
-                return seleccionados
+        total_usuarios = stats[0]
+        total_roles = stats[1]
+        roles_necesarios = stats[2]
         
-        # Selección aleatoria para otros casos
-        return random.sample(usuarios_disponibles, cantidad)
-    
-    def seed(self):
-        """Seed dinámico para asignación de roles a usuarios"""
-        logger.info("Iniciando seeding de asignación de roles...")
-        print(f"\n🔄 Iniciando asignación de roles a usuarios...")
+        if total_usuarios == 0:
+            print("❌ No hay usuarios en la base de datos. Ejecute primero UserSeeder.")
+            return 0
         
-        # Obtener usuarios y roles
-        users = self.db.query(User).filter(User.Estatus == True).all()
-        roles_db = self.db.query(Role).all()
+        if total_roles == 0:
+            print("❌ No hay roles en la base de datos. Ejecute primero RoleSeeder.")
+            return 0
         
-        if not users:
-            error_msg = "❌ No hay usuarios en la base de datos. Ejecute primero UserSeeder."
-            logger.error(error_msg)
-            print(error_msg)
-            return
+        if roles_necesarios < 3:
+            print("❌ Faltan roles necesarios (ADMIN, MEDICO, USUARIO)")
+            return 0
         
-        if not roles_db:
-            error_msg = "❌ No hay roles en la base de datos. Ejecute primero RoleSeeder."
-            logger.error(error_msg)
-            print(error_msg)
-            return
+        print(f"📊 Total de usuarios: {total_usuarios:,}")
+        print(f"📊 Roles disponibles: {total_roles}")
         
-        # Validar que existan los roles necesarios
-        if not self.validar_roles_disponibles(roles_db):
-            return
-        
-        total_usuarios = len(users)
-        print(f"📊 Total de usuarios encontrados: {total_usuarios:,}")
-        
-        # Obtener configuración de roles
+        # 2. OBTENER CONFIGURACIÓN
         config_roles = self.obtener_configuracion_roles()
         
-        # Validar que haya suficientes usuarios
+        # Validar suficientes usuarios
         usuarios_necesarios = sum(config.get('cantidad', 0) for config in config_roles.values() if 'cantidad' in config)
         
         if usuarios_necesarios > total_usuarios:
-            error_msg = f"❌ No hay suficientes usuarios. Necesarios: {usuarios_necesarios}, Disponibles: {total_usuarios}"
-            logger.error(error_msg)
-            print(error_msg)
-            return
+            print(f"❌ No hay suficientes usuarios. Necesarios: {usuarios_necesarios}, Disponibles: {total_usuarios}")
+            return 0
         
-        # Crear diccionario de roles por nombre
-        roles_dict = {role.Nombre: role for role in roles_db}
+        # 3. MÉTODO SQL DIRECTO - SÚPER RÁPIDO
+        print("🔥 Usando asignación SQL directa...")
         
-        # Lista de usuarios disponibles para asignar
-        usuarios_disponibles = users.copy()
-        random.shuffle(usuarios_disponibles)  # Mezclar para distribución aleatoria
+        # Obtener IDs de roles
+        roles_query = "SELECT ID, Nombre FROM tbc_roles WHERE Nombre IN ('ADMIN', 'MEDICO', 'USUARIO')"
+        roles_result = self.db.execute(text(roles_query))
+        roles_dict = {nombre: id_rol for id_rol, nombre in roles_result}
         
-        asignaciones_creadas = 0
-        asignaciones_existentes = 0
+        admin_role_id = roles_dict['ADMIN']
+        medico_role_id = roles_dict['MEDICO']
+        usuario_role_id = roles_dict['USUARIO']
         
-        print(f"\n🎯 Distribución de roles:")
+        # Eliminar asignaciones existentes si se especifica
+        print("🧹 Limpiando asignaciones anteriores...")
+        self.db.execute(text("DELETE FROM tbd_usuarios_roles"))
+        self.db.commit()
         
-        # Procesar cada tipo de rol
-        for rol_nombre, config in config_roles.items():
-            role = roles_dict[rol_nombre]
+        total_asignaciones = 0
+        
+        # 4. ASIGNAR ADMINS (SQL directo con prioridad por nombres)
+        admin_cantidad = config_roles['ADMIN']['cantidad']
+        nombres_admin = config_roles['ADMIN']['prioridad_nombres']
+        
+        # Buscar usuarios que parezcan admins primero
+        admin_priority_sql = f"""
+        INSERT INTO tbd_usuarios_roles (Usuario_ID, Rol_ID, Estatus, Fecha_Registro)
+        SELECT u.ID, {admin_role_id}, true, NOW()
+        FROM tbb_usuarios u
+        WHERE u.Estatus = true 
+        AND (
+            {' OR '.join([f"LOWER(u.Nombre_Usuario) LIKE '%{nombre}%' OR LOWER(u.Correo_Electronico) LIKE '%{nombre}%'" for nombre in nombres_admin])}
+        )
+        ORDER BY RAND()
+        LIMIT {admin_cantidad}
+        """
+        
+        result = self.db.execute(text(admin_priority_sql))
+        admins_asignados = result.rowcount
+        self.db.commit()
+        
+        # Si necesitamos más admins, tomar usuarios aleatorios
+        if admins_asignados < admin_cantidad:
+            admin_random_sql = f"""
+            INSERT INTO tbd_usuarios_roles (Usuario_ID, Rol_ID, Estatus, Fecha_Registro)
+            SELECT u.ID, {admin_role_id}, true, NOW()
+            FROM tbb_usuarios u
+            WHERE u.Estatus = true 
+            AND u.ID NOT IN (SELECT Usuario_ID FROM tbd_usuarios_roles)
+            ORDER BY RAND()
+            LIMIT {admin_cantidad - admins_asignados}
+            """
             
-            if 'cantidad' in config:
-                # Roles con cantidad fija (ADMIN, MEDICO)
-                cantidad = config['cantidad']
-                usuarios_seleccionados = self.seleccionar_usuarios_para_rol(
-                    usuarios_disponibles, cantidad, rol_nombre
-                )
-                
-                # Remover usuarios seleccionados de la lista disponible
-                for usuario in usuarios_seleccionados:
-                    if usuario in usuarios_disponibles:
-                        usuarios_disponibles.remove(usuario)
-                
-                print(f"   • {rol_nombre}: {len(usuarios_seleccionados)} usuarios")
-                
-            else:
-                # USUARIO - resto de usuarios
-                usuarios_seleccionados = usuarios_disponibles.copy()
-                usuarios_disponibles = []  # Ya no quedan disponibles
-                
-                print(f"   • {rol_nombre}: {len(usuarios_seleccionados)} usuarios (resto)")
-            
-            # Crear asignaciones para este rol
-            for usuario in usuarios_seleccionados:
-                # Verificar si la asignación ya existe
-                existing_assignment = self.db.query(UserRole).filter(
-                    UserRole.Usuario_ID == usuario.ID,
-                    UserRole.Rol_ID == role.ID
-                ).first()
-                
-                if not existing_assignment:
-                    user_role = UserRole(
-                        Usuario_ID=usuario.ID,
-                        Rol_ID=role.ID,
-                        Estatus=True
-                    )
-                    self.db.add(user_role)
-                    asignaciones_creadas += 1
-                    logger.info(f"Asignación creada: {usuario.Nombre_Usuario} -> {role.Nombre}")
-                else:
-                    asignaciones_existentes += 1
-                    logger.info(f"Asignación ya existe: {usuario.Nombre_Usuario} -> {role.Nombre}")
-        
-        # Commit de todas las asignaciones
-        try:
+            result = self.db.execute(text(admin_random_sql))
+            admins_asignados += result.rowcount
             self.db.commit()
+        
+        total_asignaciones += admins_asignados
+        print(f"✅ ADMIN: {admins_asignados} usuarios asignados")
+        
+        # 5. ASIGNAR MÉDICOS (SQL directo con prioridad por nombres)
+        medico_cantidad = config_roles['MEDICO']['cantidad']
+        nombres_medico = config_roles['MEDICO']['prioridad_nombres']
+        
+        # Buscar usuarios que parezcan médicos primero
+        medico_priority_sql = f"""
+        INSERT INTO tbd_usuarios_roles (Usuario_ID, Rol_ID, Estatus, Fecha_Registro)
+        SELECT u.ID, {medico_role_id}, true, NOW()
+        FROM tbb_usuarios u
+        WHERE u.Estatus = true 
+        AND u.ID NOT IN (SELECT Usuario_ID FROM tbd_usuarios_roles)
+        AND (
+            {' OR '.join([f"LOWER(u.Nombre_Usuario) LIKE '%{nombre}%' OR LOWER(u.Correo_Electronico) LIKE '%{nombre}%'" for nombre in nombres_medico])}
+        )
+        ORDER BY RAND()
+        LIMIT {medico_cantidad}
+        """
+        
+        result = self.db.execute(text(medico_priority_sql))
+        medicos_asignados = result.rowcount
+        self.db.commit()
+        
+        # Si necesitamos más médicos, tomar usuarios aleatorios
+        if medicos_asignados < medico_cantidad:
+            medico_random_sql = f"""
+            INSERT INTO tbd_usuarios_roles (Usuario_ID, Rol_ID, Estatus, Fecha_Registro)
+            SELECT u.ID, {medico_role_id}, true, NOW()
+            FROM tbb_usuarios u
+            WHERE u.Estatus = true 
+            AND u.ID NOT IN (SELECT Usuario_ID FROM tbd_usuarios_roles)
+            ORDER BY RAND()
+            LIMIT {medico_cantidad - medicos_asignados}
+            """
+            
+            result = self.db.execute(text(medico_random_sql))
+            medicos_asignados += result.rowcount
+            self.db.commit()
+        
+        total_asignaciones += medicos_asignados
+        print(f"✅ MEDICO: {medicos_asignados} usuarios asignados")
+        
+        # 6. ASIGNAR RESTO COMO USUARIOS (SQL directo)
+        usuario_sql = f"""
+        INSERT INTO tbd_usuarios_roles (Usuario_ID, Rol_ID, Estatus, Fecha_Registro)
+        SELECT u.ID, {usuario_role_id}, true, NOW()
+        FROM tbb_usuarios u
+        WHERE u.Estatus = true 
+        AND u.ID NOT IN (SELECT Usuario_ID FROM tbd_usuarios_roles)
+        """
+        
+        result = self.db.execute(text(usuario_sql))
+        usuarios_asignados = result.rowcount
+        self.db.commit()
+        
+        total_asignaciones += usuarios_asignados
+        print(f"✅ USUARIO: {usuarios_asignados} usuarios asignados")
+        
+        elapsed_time = time.time() - start_time
+        
+        # 7. RESUMEN FINAL
+        print(f"\n🎉 ¡ULTRA OPTIMIZACIÓN COMPLETADA!")
+        print(f"⚡ Total de asignaciones: {total_asignaciones:,}")
+        print(f"⏱️  Tiempo total: {elapsed_time:.2f} segundos")
+        
+        if elapsed_time > 0:
+            print(f"🚀 Velocidad: {total_asignaciones/elapsed_time:.0f} asignaciones/segundo")
+        
+        print(f"\n📊 Distribución final:")
+        print(f"   • ADMIN: {admins_asignados} usuarios")
+        print(f"   • MEDICO: {medicos_asignados} usuarios")
+        print(f"   • USUARIO: {usuarios_asignados} usuarios")
+        
+        logger.info(f"Seeding ultra optimizado completado: {total_asignaciones} asignaciones en {elapsed_time:.2f}s")
+        
+        return total_asignaciones
+    
+    def seed_fallback_optimized(self, config_roles_param=None):
+        """Método optimizado usando bulk insert como fallback"""
+        print("🔄 Usando método bulk insert optimizado...")
+        
+        # Usar configuración pasada como parámetro para evitar preguntar dos veces
+        if config_roles_param is None:
+            config_roles = self.obtener_configuracion_roles()
+        else:
+            config_roles = config_roles_param
+        
+        # Obtener todos los datos necesarios en queries optimizadas
+        users_query = """
+        SELECT u.ID, u.Nombre_Usuario, u.Correo_Electronico
+        FROM tbb_usuarios u 
+        LEFT JOIN tbd_usuarios_roles ur ON u.ID = ur.Usuario_ID
+        WHERE u.Estatus = true AND ur.Usuario_ID IS NULL
+        """
+        
+        users_result = self.db.execute(text(users_query))
+        usuarios_data = users_result.fetchall()
+        
+        if not usuarios_data:
+            print("✅ Todos los usuarios ya tienen roles asignados")
+            return 0
+        
+        # Obtener roles
+        roles_query = "SELECT ID, Nombre FROM tbc_roles WHERE Nombre IN ('ADMIN', 'MEDICO', 'USUARIO')"
+        roles_result = self.db.execute(text(roles_query))
+        roles_dict = {nombre: id_rol for id_rol, nombre in roles_result}
+        
+        # Preparar asignaciones
+        asignaciones_data = []
+        usuarios_disponibles = list(usuarios_data)
+        random.shuffle(usuarios_disponibles)
+        
+        # Asignar ADMIN con prioridad por nombres
+        admin_cantidad = config_roles['ADMIN']['cantidad']
+        nombres_admin = config_roles['ADMIN']['prioridad_nombres']
+        
+        # Buscar usuarios que parezcan admins
+        admin_usuarios = []
+        usuarios_restantes = []
+        
+        for user_id, username, email in usuarios_disponibles:
+            es_admin = any(nombre in username.lower() or nombre in email.lower() 
+                          for nombre in nombres_admin)
+            
+            if es_admin and len(admin_usuarios) < admin_cantidad:
+                admin_usuarios.append((user_id, username, email))
+            else:
+                usuarios_restantes.append((user_id, username, email))
+        
+        # Completar admins si es necesario
+        while len(admin_usuarios) < admin_cantidad and usuarios_restantes:
+            admin_usuarios.append(usuarios_restantes.pop(0))
+        
+        # Crear asignaciones para admins
+        for user_id, username, email in admin_usuarios:
+            asignaciones_data.append({
+                'Usuario_ID': user_id,
+                'Rol_ID': roles_dict['ADMIN'],
+                'Estatus': True
+            })
+        
+        # Asignar MEDICO con prioridad por nombres
+        medico_cantidad = config_roles['MEDICO']['cantidad']
+        nombres_medico = config_roles['MEDICO']['prioridad_nombres']
+        
+        medico_usuarios = []
+        usuarios_finales = []
+        
+        for user_id, username, email in usuarios_restantes:
+            es_medico = any(nombre in username.lower() or nombre in email.lower() 
+                           for nombre in nombres_medico)
+            
+            if es_medico and len(medico_usuarios) < medico_cantidad:
+                medico_usuarios.append((user_id, username, email))
+            else:
+                usuarios_finales.append((user_id, username, email))
+        
+        # Completar médicos si es necesario
+        while len(medico_usuarios) < medico_cantidad and usuarios_finales:
+            medico_usuarios.append(usuarios_finales.pop(0))
+        
+        # Crear asignaciones para médicos
+        for user_id, username, email in medico_usuarios:
+            asignaciones_data.append({
+                'Usuario_ID': user_id,
+                'Rol_ID': roles_dict['MEDICO'],
+                'Estatus': True
+            })
+        
+        # Asignar resto como USUARIO
+        for user_id, username, email in usuarios_finales:
+            asignaciones_data.append({
+                'Usuario_ID': user_id,
+                'Rol_ID': roles_dict['USUARIO'],
+                'Estatus': True
+            })
+        
+        # Bulk insert
+        if asignaciones_data:
+            self.db.bulk_insert_mappings(UserRole, asignaciones_data)
+            self.db.commit()
+            
+            print(f"✅ ADMIN: {len(admin_usuarios)} usuarios asignados")
+            print(f"✅ MEDICO: {len(medico_usuarios)} usuarios asignados")
+            print(f"✅ USUARIO: {len(usuarios_finales)} usuarios asignados")
+        
+        return len(asignaciones_data)
+    
+    def seed(self):
+        """Método principal que usa ultra optimización"""
+        try:
+            return self.seed_ultra_optimized()
         except Exception as e:
-            logger.error(f"Error al hacer commit: {e}")
-            self.db.rollback()
-            raise
-        
-        # Resumen final
-        total_asignaciones = asignaciones_creadas + asignaciones_existentes
-        
-        print(f"\n✅ Asignación de roles completada exitosamente!")
-        print(f"📊 Resumen:")
-        print(f"   • Asignaciones creadas: {asignaciones_creadas:,}")
-        print(f"   • Asignaciones ya existentes: {asignaciones_existentes:,}")
-        print(f"   • Total de asignaciones: {total_asignaciones:,}")
-        print(f"   • Usuarios procesados: {total_usuarios:,}")
-        
-        logger.info(f"Seeding de asignación de roles completado:")
-        logger.info(f"- Asignaciones creadas: {asignaciones_creadas}")
-        logger.info(f"- Asignaciones existentes: {asignaciones_existentes}")
-        logger.info(f"- Total procesado: {total_asignaciones}")
+            logger.error(f"Error en ultra optimización: {e}")
+            print(f"⚠️  Error en SQL directo: {e}")
+            print("🔄 Usando método alternativo...")
+            
+            # Obtener la configuración una sola vez para pasarla al fallback
+            config_roles = self.obtener_configuracion_roles()
+            return self.seed_fallback_optimized(config_roles)
+
+# Alias para mantener compatibilidad
+UserRoleSeeder = UltraOptimizedUserRoleSeeder
 
 if __name__ == "__main__":
     try:
-        with UserRoleSeeder() as seeder:
+        start = time.time()
+        with UltraOptimizedUserRoleSeeder() as seeder:
             seeder.create_tables()
             seeder.run(clear_first=True, table_names=['tbd_usuarios_roles'])
+        
+        elapsed = time.time() - start
+        print(f"\n¡Proceso completado en {elapsed:.2f} segundos!")
+        
     except KeyboardInterrupt:
         print("\n❌ Proceso interrumpido por el usuario")
     except Exception as e:

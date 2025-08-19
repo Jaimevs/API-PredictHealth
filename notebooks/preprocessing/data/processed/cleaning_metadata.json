@@ -1,8 +1,8 @@
 {
   "proceso_limpieza": {
-    "fecha_procesamiento": "2025-08-11T22:28:37.728195",
-    "registros_finales": 465,
-    "usuarios_finales": 7,
+    "fecha_procesamiento": "2025-08-18T21:24:03.936891",
+    "registros_finales": 6587,
+    "usuarios_finales": 100,
     "columnas_finales": [
       "ID",
       "Usuario_ID",
