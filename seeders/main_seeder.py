@@ -9,7 +9,8 @@ from .user_seeder import UserSeeder
 from .user_role_seeder import UserRoleSeeder
 from .smartwatch_seeder import SmartwatchSeeder
 from .health_profile import HealthProfileSeeder
-from .heart_measurement_seeder import HeartMeasurementSeeder
+# from .heart_measurement_seeder import HeartMeasurementSeeder
+from .heart_measurement_seederV2 import HeartMeasurementSeeder
 from .alerts_seeder import AlertsSeeder
 from .physical_activity_seeder import PhysicalActivitySeeder
 from .base_seeder import BaseSeeder

@@ -51,7 +51,7 @@ class PersonSeeder(BaseSeeder):
                 print("SEEDER DE PERSONAS")
                 print("="*50)
                 
-                cantidad = input("¿Cuántas personas desea generar? (mínimo 1, máximo 10000): ")
+                cantidad = input("¿Cuántas personas desea generar? (mínimo 1, máximo 100000): ")
                 
                 # Validar que sea un número
                 cantidad = int(cantidad)
@@ -60,7 +60,7 @@ class PersonSeeder(BaseSeeder):
                 if cantidad < 1:
                     print("❌ Error: La cantidad debe ser mayor a 0")
                     continue
-                elif cantidad > 10000:
+                elif cantidad > 100000:
                     print("❌ Error: Por razones de rendimiento, el máximo es 10,000 personas")
                     continue
                 
