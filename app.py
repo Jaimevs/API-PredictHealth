@@ -18,7 +18,8 @@ from routes import (
     physical_activity,
     alert,
     auth,  # Autenticacion normal
-    google_auth  # Autenticacion con Google
+    google_auth,  # Autenticacion con Google
+    seeder  # Endpoints para seeders
 )
 
 app = FastAPI(
@@ -88,6 +89,7 @@ app.include_router(smartwatch.router, prefix=settings.API_V1_STR)
 app.include_router(heart_measurement.router, prefix=settings.API_V1_STR)
 app.include_router(physical_activity.router, prefix=settings.API_V1_STR)
 app.include_router(alert.router, prefix=settings.API_V1_STR)
+app.include_router(seeder.router, prefix=settings.API_V1_STR)  # Endpoints para seeders
 
 @app.get("/")
 def read_root():
